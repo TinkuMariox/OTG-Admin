@@ -1,0 +1,67 @@
+/* Tailwind CSS Directives */
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+body {
+  @apply bg-gray-50 text-gray-800 font-sans;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2;
+  }
+  .btn-primary:hover {
+    @apply bg-primary-600;
+  }
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg transition-colors shadow-sm;
+  }
+  .btn-secondary:hover {
+    @apply bg-gray-50;
+  }
+  .btn-danger {
+    @apply px-4 py-2 bg-red-500 text-white rounded-lg transition-colors shadow-sm;
+  }
+  .btn-danger:hover {
+    @apply bg-red-600;
+  }
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg transition-shadow;
+  }
+  .input-field:focus {
+    @apply outline-none ring-2 ring-primary-500 border-transparent;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+  .table-container {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  .table-header {
+    @apply bg-primary-50 text-primary-900 font-semibold text-left;
+  }
+  .table-row {
+    @apply border-b border-gray-100 transition-colors;
+  }
+  .table-row:hover {
+    @apply bg-gray-50;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #fdba74;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fb923c;
+}
