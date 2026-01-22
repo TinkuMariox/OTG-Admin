@@ -27,3 +27,11 @@ yarn-error.log*
 
 # Testing
 coverage/
+
+# User-generated content
+# Ignore uploaded media files from the CMS
+/uploads/
+
+# Local database files
+*.sqlite
+*.sqlite3
