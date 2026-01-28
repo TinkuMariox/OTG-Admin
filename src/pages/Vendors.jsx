@@ -1,172 +1,528 @@
-import { useState } from "react";
-import { useData } from "../components/DataContext";
-import { Plus, Edit2, Trash2, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Store,
+  RotateCcw,
+  X,
+  Trash,
+  Filter,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Phone,
+  Mail,
+  Package,
+  Map,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  getVendors,
+  getDeletedVendors,
+  createVendor,
+  updateVendor,
+  deleteVendor,
+  restoreVendor,
+  permanentDeleteVendor,
+  toggleVendorStatus,
+  getStates,
+  clearMessage,
+  clearError,
+} from "../store/slices/vendorSlice";
+import LocationPicker from "../components/LocationPicker";
 
-const Vendors = () => {
-  const { vendors, setVendors } = useData();
+export default function Vendors() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const {
+    vendors,
+    deletedVendors,
+    states,
+    loading,
+    error,
+    message,
+    pagination,
+  } = useSelector((state) => state.vendors);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
     email: "",
-    address: "",
-    status: "Active",
-    material: "Cement",
+    business: {
+      name: "",
+      gstNumber: "",
+      panNumber: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+    },
+    location: {
+      latitude: "",
+      longitude: "",
+      address: "",
+    },
+    status: "active",
   });
 
-  /* ---------------- LOGIC ---------------- */
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+    city: "",
+    fromDate: "",
+    toDate: "",
+  });
 
-  const handleSubmit = (e) => {
+  // Fetch initial data
+  useEffect(() => {
+    dispatch(getStates());
+  }, [dispatch]);
+
+  // Fetch vendors with filters
+  useEffect(() => {
+    const params = { page: 1, limit: 20 };
+    if (filters.search) params.search = filters.search;
+    if (filters.status) params.status = filters.status;
+    if (filters.city) params.city = filters.city;
+    if (filters.fromDate) params.fromDate = filters.fromDate;
+    if (filters.toDate) params.toDate = filters.toDate;
+    dispatch(getVendors(params));
+  }, [dispatch, filters]);
+
+  // Handle success/error messages
+  useEffect(() => {
+    if (message) {
+      toast.success(message);
+      dispatch(clearMessage());
+    }
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [message, error, dispatch]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (editingId) {
-      setVendors(
-        vendors.map((v) =>
-          v.id === editingId ? { ...formData, id: editingId } : v
-        )
-      );
-    } else {
-      setVendors([...vendors, { ...formData, id: Date.now() }]);
+    if (!formData.mobile) {
+      toast.error("Mobile number is required");
+      return;
     }
-    closeModal();
+
+    if (!formData.business.name) {
+      toast.error("Business name is required");
+      return;
+    }
+
+    if (!formData.location.latitude || !formData.location.longitude) {
+      toast.error("Location coordinates are required");
+      return;
+    }
+
+    const payload = {
+      name: formData.name,
+      mobile: formData.mobile,
+      email: formData.email || undefined,
+      business: {
+        name: formData.business.name,
+        gstNumber: formData.business.gstNumber || undefined,
+        panNumber: formData.business.panNumber || undefined,
+        address: formData.business.address,
+        city: formData.business.city,
+        state: formData.business.state,
+        pincode: formData.business.pincode,
+      },
+      location: {
+        latitude: parseFloat(formData.location.latitude),
+        longitude: parseFloat(formData.location.longitude),
+        address: formData.location.address || undefined,
+      },
+      status: formData.status,
+    };
+
+    try {
+      if (editingId) {
+        await dispatch(updateVendor({ id: editingId, data: payload })).unwrap();
+      } else {
+        await dispatch(createVendor(payload)).unwrap();
+      }
+      closeModal();
+    } catch (err) {
+      // Error handled by redux
+    }
   };
 
   const openModal = (vendor = null) => {
     if (vendor) {
-      setEditingId(vendor.id);
-      setFormData(vendor);
+      setEditingId(vendor._id);
+      setFormData({
+        name: vendor.name || "",
+        mobile: vendor.mobile || "",
+        email: vendor.email || "",
+        business: {
+          name: vendor.business?.name || "",
+          gstNumber: vendor.business?.gstNumber || "",
+          panNumber: vendor.business?.panNumber || "",
+          address: vendor.business?.address || "",
+          city: vendor.business?.city || "",
+          state: vendor.business?.state || "",
+          pincode: vendor.business?.pincode || "",
+        },
+        location: {
+          latitude: vendor.location?.coordinates?.[1] || "",
+          longitude: vendor.location?.coordinates?.[0] || "",
+          address: vendor.location?.address || "",
+        },
+        status: vendor.status || "active",
+      });
     } else {
       setEditingId(null);
       setFormData({
         name: "",
         mobile: "",
         email: "",
-        address: "",
-        status: "Active",
-        material: "Cement",
+        business: {
+          name: "",
+          gstNumber: "",
+          panNumber: "",
+          address: "",
+          city: "",
+          state: "",
+          pincode: "",
+        },
+        location: {
+          latitude: "",
+          longitude: "",
+          address: "",
+        },
+        status: "active",
       });
     }
     setIsModalOpen(true);
   };
 
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+  };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this vendor?")) {
-      setVendors(vendors.filter((v) => v.id !== id));
+      await dispatch(deleteVendor(id));
     }
   };
 
-  const filteredVendors = vendors.filter(
-    (v) =>
-      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleToggleStatus = async (id) => {
+    await dispatch(toggleVendorStatus(id));
+  };
 
-  /* ---------------- UI ---------------- */
+  // Deleted vendors modal handlers
+  const openDeletedModal = () => {
+    dispatch(getDeletedVendors());
+    setIsDeletedModalOpen(true);
+  };
+
+  const handleRestore = async (id) => {
+    await dispatch(restoreVendor(id));
+  };
+
+  const handlePermanentDelete = async (id) => {
+    if (
+      confirm(
+        "Are you sure you want to permanently delete this vendor? This will also delete all their materials. This action cannot be undone.",
+      )
+    ) {
+      await dispatch(permanentDeleteVendor(id));
+    }
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      status: "",
+      city: "",
+      fromDate: "",
+      toDate: "",
+    });
+  };
+
+  const handleLocationSelect = (location) => {
+    setFormData({
+      ...formData,
+      business: {
+        ...formData.business,
+        // Only update if we got values from the map
+        city: location.city || formData.business.city,
+        state: location.state || formData.business.state,
+        pincode: location.pincode || formData.business.pincode,
+      },
+      location: {
+        latitude: location.latitude.toString(),
+        longitude: location.longitude.toString(),
+        address: location.address || formData.location.address,
+      },
+    });
+    toast.success("Location selected successfully");
+  };
+
+  const getInitialMapPosition = () => {
+    if (formData.location.latitude && formData.location.longitude) {
+      return {
+        lat: parseFloat(formData.location.latitude),
+        lng: parseFloat(formData.location.longitude),
+      };
+    }
+    return null;
+  };
+
+  const handleManageMaterials = (vendorId) => {
+    navigate(`/vendors/${vendorId}/materials`);
+  };
 
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
           <p className="text-sm text-gray-500">
-            Construction material suppliers management
+            Manage material vendors and suppliers
           </p>
         </div>
 
-        <button onClick={() => openModal()} className="btn-primary">
-          <Plus size={18} /> Add Vendor
-        </button>
+        <div className="flex gap-3">
+          <button onClick={openDeletedModal} className="btn-secondary">
+            <Trash size={18} /> Deleted
+          </button>
+          <button onClick={() => openModal()} className="btn-primary">
+            <Plus size={18} /> Add Vendor
+          </button>
+        </div>
       </div>
 
-      {/* SEARCH */}
-      <div className="relative max-w-sm">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          size={18}
-        />
-        <input
-          className="input-field pl-10"
-          placeholder="Search vendor..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* FILTERS */}
+      <div className="bg-white border rounded-xl p-4">
+        <button
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="flex items-center gap-2 text-gray-700 font-medium"
+        >
+          <Filter size={18} />
+          Filters
+          {isFilterOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+
+        {isFilterOpen && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="relative lg:col-span-2">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search by name, mobile, business..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+                className="input-field pl-10"
+              />
+            </div>
+
+            {/* City Filter */}
+            <input
+              type="text"
+              placeholder="Filter by city"
+              value={filters.city}
+              onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+              className="input-field"
+            />
+
+            {/* Status Filter */}
+            <select
+              value={filters.status}
+              onChange={(e) =>
+                setFilters({ ...filters, status: e.target.value })
+              }
+              className="input-field"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            {/* From Date */}
+            <input
+              type="date"
+              value={filters.fromDate}
+              onChange={(e) =>
+                setFilters({ ...filters, fromDate: e.target.value })
+              }
+              className="input-field"
+              placeholder="From Date"
+            />
+          </div>
+        )}
+
+        {isFilterOpen && (
+          <div className="mt-4 flex justify-between items-center">
+            <input
+              type="date"
+              value={filters.toDate}
+              onChange={(e) =>
+                setFilters({ ...filters, toDate: e.target.value })
+              }
+              className="input-field w-48"
+              placeholder="To Date"
+            />
+            <button onClick={clearFilters} className="btn-secondary text-sm">
+              Clear Filters
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* LOADING STATE */}
+      {loading && vendors.length === 0 && (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+        </div>
+      )}
 
       {/* TABLE */}
       <div className="bg-white border rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 text-sm text-gray-600">
+          <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="p-4 text-left">Vendor</th>
-              <th className="p-4 text-left">Contact</th>
-              <th className="p-4 text-left">Material</th>
-              <th className="p-4 text-left">Status</th>
-              <th className="p-4 text-right">Actions</th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                Vendor
+              </th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                Contact
+              </th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                Business
+              </th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                Location
+              </th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                Status
+              </th>
+              <th className="text-right p-4 font-medium text-gray-600">
+                Actions
+              </th>
             </tr>
           </thead>
-
           <tbody>
-            {filteredVendors.map((vendor) => (
+            {vendors.map((vendor) => (
               <tr
-                key={vendor.id}
-                className="border-t hover:bg-gray-50 transition"
+                key={vendor._id}
+                className="border-b hover:bg-gray-50 transition"
               >
                 <td className="p-4">
-                  <p className="font-medium text-gray-900">{vendor.name}</p>
-                  <p className="text-xs text-gray-500 truncate max-w-xs">
-                    {vendor.address}
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                      <Store size={20} className="text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {vendor.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {vendor.business?.name}
+                      </div>
+                    </div>
+                  </div>
                 </td>
-
-                <td className="p-4 text-sm">
-                  <p>{vendor.email}</p>
-                  <p className="text-xs text-gray-500">{vendor.mobile}</p>
-                </td>
-
-                <td className="p-4 text-sm">
-                  <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-medium">
-                    {vendor.material}
-                  </span>
-                </td>
-
                 <td className="p-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      vendor.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Phone size={14} />
+                    {vendor.mobile}
+                  </div>
+                  {vendor.email && (
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                      <Mail size={12} />
+                      {vendor.email}
+                    </div>
+                  )}
+                </td>
+                <td className="p-4">
+                  <div className="text-sm text-gray-600">
+                    {vendor.business?.city}, {vendor.business?.state}
+                  </div>
+                  {vendor.business?.gstNumber && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      GST: {vendor.business.gstNumber}
+                    </div>
+                  )}
+                </td>
+                <td className="p-4">
+                  {vendor.location?.coordinates && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <MapPin size={14} className="text-red-500" />
+                      <span className="truncate max-w-[150px]">
+                        {vendor.location.address ||
+                          `${vendor.location.coordinates[1].toFixed(4)}, ${vendor.location.coordinates[0].toFixed(4)}`}
+                      </span>
+                    </div>
+                  )}
+                </td>
+                <td className="p-4">
+                  <button
+                    onClick={() => handleToggleStatus(vendor._id)}
+                    className={`text-xs px-3 py-1 rounded-full cursor-pointer transition ${
+                      vendor.status === "active"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-red-100 text-red-700 hover:bg-red-200"
                     }`}
                   >
-                    {vendor.status}
-                  </span>
+                    {vendor.status === "active" ? "Active" : "Inactive"}
+                  </button>
                 </td>
-
-                <td className="p-4 text-right space-x-3">
-                  <button
-                    onClick={() => openModal(vendor)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vendor.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                <td className="p-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => handleManageMaterials(vendor._id)}
+                      className="text-purple-600 hover:text-purple-800 p-1"
+                      title="Manage Materials"
+                    >
+                      <Package size={18} />
+                    </button>
+                    <button
+                      onClick={() => openModal(vendor)}
+                      className="text-blue-600 hover:text-blue-800 p-1"
+                      title="Edit"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(vendor._id)}
+                      className="text-red-600 hover:text-red-800 p-1"
+                      title="Delete"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
 
-            {filteredVendors.length === 0 && (
+            {!loading && vendors.length === 0 && (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-500">
+                <td colSpan="6" className="text-center text-gray-500 py-20">
                   No vendors found
                 </td>
               </tr>
@@ -175,70 +531,339 @@ const Vendors = () => {
         </table>
       </div>
 
-      {/* MODAL */}
+      {/* ADD/EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {editingId ? "Edit Vendor" : "Add Vendor"}
-            </h2>
+          <div className="bg-white rounded-xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">
+                {editingId ? "Edit Vendor" : "Add Vendor"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                className="input-field"
-                placeholder="Vendor Name"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Info */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Vendor Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter vendor name"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  className="input-field"
-                  placeholder="Email"
-                  required
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-                <input
-                  className="input-field"
-                  placeholder="Mobile"
-                  required
-                  value={formData.mobile}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mobile: e.target.value })
-                  }
-                />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mobile Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter mobile number"
+                      value={formData.mobile}
+                      onChange={(e) =>
+                        setFormData({ ...formData, mobile: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email <span className="text-gray-400">(Optional)</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="input-field"
+                      placeholder="Enter email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      className="input-field"
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData({ ...formData, status: e.target.value })
+                      }
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <textarea
-                className="input-field"
-                placeholder="Address"
-                rows="2"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-              />
+              {/* Business Info */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Business Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter business name"
+                      value={formData.business.name}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            name: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
 
-              <select
-                className="input-field"
-                value={formData.material}
-                onChange={(e) =>
-                  setFormData({ ...formData, material: e.target.value })
-                }
-              >
-                <option>Cement</option>
-                <option>Steel</option>
-                <option>Sand</option>
-                <option>Bricks</option>
-              </select>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      GST Number{" "}
+                      <span className="text-gray-400">(Optional)</span>
+                    </label>
+                    <input
+                      className="input-field"
+                      placeholder="Enter GST number"
+                      value={formData.business.gstNumber}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            gstNumber: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      PAN Number{" "}
+                      <span className="text-gray-400">(Optional)</span>
+                    </label>
+                    <input
+                      className="input-field"
+                      placeholder="Enter PAN number"
+                      value={formData.business.panNumber}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            panNumber: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter business address"
+                      value={formData.business.address}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            address: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter city"
+                      value={formData.business.city}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            city: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      required
+                      className="input-field"
+                      value={formData.business.state}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            state: e.target.value,
+                          },
+                        })
+                      }
+                    >
+                      <option value="">Select State</option>
+                      {states.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter pincode"
+                      value={formData.business.pincode}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          business: {
+                            ...formData.business,
+                            pincode: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Info */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Location (GPS Coordinates)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsLocationPickerOpen(true)}
+                    className="text-sm text-orange-600 hover:text-orange-700 flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-lg"
+                  >
+                    <Map size={14} />
+                    Select on Map
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Latitude <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      step="any"
+                      className="input-field"
+                      placeholder="e.g., 28.6139"
+                      value={formData.location.latitude}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            latitude: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Longitude <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      step="any"
+                      className="input-field"
+                      placeholder="e.g., 77.2090"
+                      value={formData.location.longitude}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            longitude: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Location Label{" "}
+                      <span className="text-gray-400">(Optional)</span>
+                    </label>
+                    <input
+                      className="input-field"
+                      placeholder="e.g., Near Main Market"
+                      value={formData.location.address}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            address: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -246,16 +871,99 @@ const Vendors = () => {
                 >
                   Cancel
                 </button>
-                <button className="btn-primary">
-                  {editingId ? "Update" : "Save"}
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? "Saving..." : editingId ? "Update" : "Save"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* DELETED VENDORS MODAL */}
+      {isDeletedModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-3xl p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Deleted Vendors</h2>
+              <button
+                onClick={() => setIsDeletedModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {loading && deletedVendors.length === 0 ? (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+              </div>
+            ) : deletedVendors.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                No deleted vendors
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {deletedVendors.map((vendor) => (
+                  <div
+                    key={vendor._id}
+                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                        <Store size={24} className="text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {vendor.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {vendor.business?.name} • {vendor.mobile}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Deleted on:{" "}
+                          {new Date(vendor.deletedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleRestore(vendor._id)}
+                        className="flex items-center gap-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                        title="Restore"
+                      >
+                        <RotateCcw size={16} />
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => handlePermanentDelete(vendor._id)}
+                        className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
+                        title="Delete Permanently"
+                      >
+                        <Trash2 size={16} />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* LOCATION PICKER MODAL */}
+      <LocationPicker
+        isOpen={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        onSelect={handleLocationSelect}
+        initialPosition={getInitialMapPosition()}
+      />
     </div>
   );
-};
-
-export default Vendors;
+}

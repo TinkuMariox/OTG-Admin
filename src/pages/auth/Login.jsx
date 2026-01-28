@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, LogIn } from "lucide-react";
+import toast from "react-hot-toast";
 import Input from "../../components/ui/Input";
+import { login, clearError, clearMessage } from "../../store/slices/authSlice";
 
 export default function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error, message, isAuthenticated } = useSelector(
+    (state) => state.auth,
+  );
 
   const [formData, setFormData] = useState({
     email: "",
@@ -12,7 +19,24 @@ export default function Login() {
   });
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+
+  // Handle auth state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.success(message || "Login successful!");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    }
+  }, [isAuthenticated, message, navigate]);
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,7 +67,7 @@ export default function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
@@ -54,48 +78,42 @@ export default function Login() {
       return;
     }
 
-    // Demo login (replace with API later)
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    dispatch(login({ email: formData.email, password: formData.password }));
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="flex flex-col min-h-screen lg:flex-row">
       {/* LEFT SECTION */}
-      <div className="w-full lg:w-3/5 bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center p-8 order-2 lg:order-1">
-        <div className="text-center text-white max-w-2xl">
-          <div className="mb-8 inline-block">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+      <div className="flex items-center justify-center order-2 w-full p-8 lg:w-3/5 bg-gradient-to-br from-orange-400 to-orange-500 lg:order-1">
+        <div className="max-w-2xl text-center text-white">
+          <div className="inline-block mb-8">
+            <div className="flex items-center justify-center w-20 h-20 border rounded-full bg-white/20 backdrop-blur-md border-white/30">
               <LogIn size={40} className="text-white" />
             </div>
           </div>
 
-          <h1 className="text-4xl lg:text-5xl font-bold mb-4">
-            BuildHub Admin Panel
+          <h1 className="mb-4 text-4xl font-bold lg:text-5xl">
+            OTG Admin Panel
           </h1>
 
           <p className="text-lg text-white/90">
             Manage vendors, materials, bookings and transactions efficiently
           </p>
 
-          <div className="h-1 w-24 bg-white/40 mx-auto mt-8 rounded-full" />
+          <div className="w-24 h-1 mx-auto mt-8 rounded-full bg-white/40" />
         </div>
       </div>
 
       {/* RIGHT SECTION */}
-      <div className="w-full lg:w-2/5 bg-gray-50 flex items-center justify-center p-6 lg:p-12 order-1 lg:order-2">
+      <div className="flex items-center justify-center order-1 w-full p-6 lg:w-2/5 bg-gray-50 lg:p-12 lg:order-2">
         <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+          <div className="p-8 bg-white border border-gray-200 shadow-xl rounded-2xl">
             {/* Header */}
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="mb-2 text-3xl font-bold text-gray-900">
                 Admin Login
               </h2>
-              <p className="text-gray-500 text-sm">
+              <p className="text-sm text-gray-500">
                 Sign in to continue to your account
               </p>
             </div>
@@ -129,16 +147,16 @@ export default function Login() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-gray-300 accent-orange-400"
+                    className="w-4 h-4 border-gray-300 rounded accent-orange-400"
                   />
-                  <span className="text-sm text-gray-700 font-medium">
+                  <span className="text-sm font-medium text-gray-700">
                     Remember me
                   </span>
                 </label>
 
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-orange-400 hover:text-orange-500 font-semibold"
+                  className="text-sm font-semibold text-orange-400 hover:text-orange-500"
                 >
                   Forgot password?
                 </Link>
@@ -158,20 +176,22 @@ export default function Login() {
             </form>
 
             {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-center text-xs text-gray-500 mb-4 font-medium">
+            <div className="pt-6 mt-8 border-t border-gray-200">
+              <p className="mb-4 text-xs font-medium text-center text-gray-500">
                 Demo Credentials
               </p>
-              <div className="space-y-2 bg-orange-50 p-4 rounded-lg border border-orange-100">
+              <div className="p-4 space-y-2 border border-orange-100 rounded-lg bg-orange-50">
                 <p className="text-xs text-gray-700">
                   <span className="font-semibold text-orange-600">Email:</span>
-                  <code className="ml-2 bg-white px-2 py-1 rounded text-orange-700 font-mono">
+                  <code className="px-2 py-1 ml-2 font-mono text-orange-700 bg-white rounded">
                     admin@example.com
                   </code>
                 </p>
                 <p className="text-xs text-gray-700">
-                  <span className="font-semibold text-orange-600">Password:</span>
-                  <code className="ml-2 bg-white px-2 py-1 rounded text-orange-700 font-mono">
+                  <span className="font-semibold text-orange-600">
+                    Password:
+                  </span>
+                  <code className="px-2 py-1 ml-2 font-mono text-orange-700 bg-white rounded">
                     any password
                   </code>
                 </p>
@@ -180,8 +200,8 @@ export default function Login() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-500 mt-6">
-            © 2024 BuildHub. All rights reserved.
+          <p className="mt-6 text-xs text-center text-gray-500">
+            © 2024 OTG. All rights reserved.
           </p>
         </div>
       </div>
