@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   TrendingUp,
   Users,
@@ -12,75 +13,103 @@ import {
 } from "lucide-react";
 
 import Card from "../components/ui/Card";
-import {
-  dummyDashboardStats,
-  dummyVendors,
-  dummyMaterials,
-} from "../data/dummyData";
+import api from "../services/api";
 
 export default function Dashboard() {
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [topMaterials, setTopMaterials] = useState([]);
+  const [topVendors, setTopVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, materialsRes, vendorsRes] = await Promise.all([
+        api.get("/bookings/stats/dashboard"),
+        api.get("/bookings/stats/top-materials"),
+        api.get("/bookings/stats/top-vendors"),
+      ]);
+
+      setDashboardStats(statsRes.data.data);
+      setTopMaterials(materialsRes.data.data);
+      setTopVendors(vendorsRes.data.data);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setDashboardStats({
+        totalOrders: 0,
+        pendingOrders: 0,
+        deliveredOrders: 0,
+        today: {
+          todayOrders: 0,
+          todayPending: 0,
+          todayCompleted: 0,
+          todayRevenue: 0,
+        },
+      });
+      setTopMaterials([]);
+      setTopVendors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ---------------- KPIs ---------------- */
 
   const statCards = [
     {
       icon: ShoppingCart,
       label: "Total Orders",
-      value: "1,234",
-      change: "+12.5%",
+      value: dashboardStats?.totalOrders || 0,
+      change: "",
       trend: "up",
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
     {
-      icon: Users,
-      label: "Active Vendors",
-      value: dummyDashboardStats.activeVendors,
-      change: "+8.2%",
+      icon: Package,
+      label: "Today's Pending",
+      value: dashboardStats?.today?.todayPending || 0,
+      change: `${dashboardStats?.today?.todayOrders || 0} today`,
+      trend: "up",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50",
+    },
+    {
+      icon: CheckCircle,
+      label: "Completed Orders",
+      value: dashboardStats?.deliveredOrders || 0,
+      change: `${dashboardStats?.today?.todayCompleted || 0} today`,
       trend: "up",
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
-      icon: Package,
-      label: "Materials in Stock",
-      value: dummyDashboardStats.totalMaterials,
-      change: "-2.3%",
-      trend: "down",
+      icon: TrendingUp,
+      label: "Total Revenue",
+      value: `₹${(dashboardStats?.totalRevenue || 0).toLocaleString()}`,
+      change: `₹${(dashboardStats?.today?.todayRevenue || 0).toLocaleString()} today`,
+      trend: "up",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
-    {
-      icon: BarChart3,
-      label: "Monthly Revenue",
-      value: "₹2.4L",
-      change: "+24.5%",
-      trend: "up",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-    },
   ];
 
-  /* ---------------- BUSINESS LOGIC ---------------- */
-
-  const lowStockMaterials = dummyMaterials.filter(
-    (m) => m.stock && m.stock < 20
-  );
-
-  const pendingOrders = 18;
-  const completedOrders = 216;
-
-  const topVendors = dummyVendors.slice(0, 5);
+  const pendingOrders = dashboardStats?.pendingOrders || 0;
+  const completedOrders = dashboardStats?.deliveredOrders || 0;
 
   /* ---------------- UI ---------------- */
 
   return (
     <div className="space-y-8">
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
-          const TrendIcon =
-            stat.trend === "up" ? ArrowUpRight : ArrowDownRight;
+          const TrendIcon = stat.trend === "up" ? ArrowUpRight : ArrowDownRight;
           const trendColor =
             stat.trend === "up" ? "text-green-600" : "text-red-600";
 
@@ -98,26 +127,31 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <p className="text-gray-600 text-sm font-medium mb-2">
+              <p className="mb-2 text-sm font-medium text-gray-600">
                 {stat.label}
               </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stat.value}
-              </p>
+              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
             </Card>
           );
         })}
       </div>
 
       {/* MIDDLE GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Revenue Chart */}
-        <Card title="Weekly Revenue Trend" icon={BarChart3} className="lg:col-span-2">
+        <Card
+          title="Weekly Revenue Trend"
+          icon={BarChart3}
+          className="lg:col-span-2"
+        >
           <div className="flex items-end justify-between h-48 gap-2">
             {[65, 45, 78, 55, 82, 60, 70].map((height, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+              <div
+                key={idx}
+                className="flex flex-col items-center flex-1 gap-2"
+              >
                 <div
-                  className="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-lg"
+                  className="w-full rounded-t-lg bg-gradient-to-t from-orange-500 to-orange-400"
                   style={{ height: `${height}%` }}
                 />
                 <span className="text-xs text-gray-500">
@@ -128,27 +162,25 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Admin Actions */}
-        <Card title="Admin Actions" icon={AlertTriangle}>
+        {/* Order Status */}
+        <Card title="Order Status" icon={AlertTriangle}>
           <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50">
               <span className="text-sm font-medium">Pending Orders</span>
-              <span className="text-yellow-600 font-bold">
-                {pendingOrders}
-              </span>
+              <span className="font-bold text-yellow-600">{pendingOrders}</span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
               <span className="text-sm font-medium">Completed Orders</span>
-              <span className="text-green-600 font-bold">
+              <span className="font-bold text-green-600">
                 {completedOrders}
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-              <span className="text-sm font-medium">Low Stock Items</span>
-              <span className="text-red-600 font-bold">
-                {lowStockMaterials.length}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50">
+              <span className="text-sm font-medium">Total Revenue</span>
+              <span className="font-bold text-orange-600">
+                ₹{(dashboardStats?.totalRevenue || 0).toLocaleString()}
               </span>
             </div>
           </div>
@@ -156,53 +188,75 @@ export default function Dashboard() {
       </div>
 
       {/* BOTTOM GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Vendors */}
-        <Card title="Top Performing Vendors" icon={Users}>
-          <div className="space-y-3">
-            {topVendors.map((vendor) => (
-              <div
-                key={vendor.id}
-                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold">
-                    {vendor.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{vendor.name}</p>
-                    <p className="text-xs text-gray-500">Reliable Supplier</p>
-                  </div>
-                </div>
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Low Stock Alert */}
-        <Card title="Low Stock Materials" icon={Package}>
-          {lowStockMaterials.length > 0 ? (
-            <div className="space-y-2">
-              {lowStockMaterials.map((m) => (
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Top 5 Materials */}
+        <Card title="Top 5 Materials" icon={Package}>
+          {topMaterials && topMaterials.length > 0 ? (
+            <div className="space-y-3">
+              {topMaterials.map((material, idx) => (
                 <div
-                  key={m.id}
-                  className="flex justify-between items-center p-3 bg-red-50 rounded-lg"
+                  key={material._id}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50"
                 >
-                  <div>
-                    <p className="text-sm font-medium">{m.name}</p>
-                    <p className="text-xs text-gray-500">
-                      Stock: {m.stock} units
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 text-sm font-bold text-white bg-orange-500 rounded-lg">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {material.materialName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Orders: {material.count} | Qty: {material.totalQuantity}{" "}
+                        {material.unit}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-orange-600">
+                      ₹{(material.totalRevenue || 0).toLocaleString()}
                     </p>
                   </div>
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle size={18} />
-              <span className="text-sm">All materials sufficiently stocked</span>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Package size={18} />
+              <span className="text-sm">No materials data available</span>
+            </div>
+          )}
+        </Card>
+
+        {/* Top Vendors */}
+        <Card title="Top Performing Vendors" icon={Users}>
+          {topVendors && topVendors.length > 0 ? (
+            <div className="space-y-3">
+              {topVendors.map((vendor, idx) => (
+                <div
+                  key={vendor._id}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 text-sm font-bold text-white bg-orange-500 rounded-lg">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{vendor.vendorName}</p>
+                      <p className="text-xs text-gray-500">
+                        Orders: {vendor.count} | Revenue: ₹
+                        {(vendor.totalRevenue || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users size={18} />
+              <span className="text-sm">No vendor data available</span>
             </div>
           )}
         </Card>

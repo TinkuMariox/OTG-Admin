@@ -49,7 +49,7 @@ export default function VendorMaterials() {
     minOrderQty: "1",
     maxOrderQty: "",
     isAvailable: true,
-    notes: "",
+    specs: "",
   });
 
   // Filter states for material selection
@@ -101,7 +101,7 @@ export default function VendorMaterials() {
         ? parseInt(formData.maxOrderQty)
         : undefined,
       isAvailable: formData.isAvailable,
-      notes: formData.notes || undefined,
+      specs: formData.specs || undefined,
     };
 
     try {
@@ -140,7 +140,7 @@ export default function VendorMaterials() {
         minOrderQty: vendorMaterial.minOrderQty?.toString() || "1",
         maxOrderQty: vendorMaterial.maxOrderQty?.toString() || "",
         isAvailable: vendorMaterial.isAvailable !== false,
-        notes: vendorMaterial.notes || "",
+        specs: vendorMaterial.specs || "",
       });
     } else {
       setEditingMaterial(null);
@@ -150,7 +150,7 @@ export default function VendorMaterials() {
         minOrderQty: "1",
         maxOrderQty: "",
         isAvailable: true,
-        notes: "",
+        specs: "",
       });
       setMaterialFilter({ category: "", subCategory: "", search: "" });
     }
@@ -634,15 +634,16 @@ export default function VendorMaterials() {
 
                   <div className="md:col-span-2">
                     <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Notes <span className="text-gray-400">(Optional)</span>
+                      Material Specs{" "}
+                      <span className="text-gray-400">(Optional)</span>
                     </label>
                     <textarea
                       className="input-field"
                       rows="2"
-                      placeholder="Any additional notes..."
-                      value={formData.notes}
+                      placeholder="Enter material specifications..."
+                      value={formData.specs}
                       onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
+                        setFormData({ ...formData, specs: e.target.value })
                       }
                     ></textarea>
                   </div>

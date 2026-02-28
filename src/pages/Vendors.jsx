@@ -67,6 +67,13 @@ export default function Vendors() {
       state: "",
       pincode: "",
     },
+    bankDetails: {
+      accountHolderName: "",
+      accountNumber: "",
+      bankName: "",
+      ifscCode: "",
+      branchName: "",
+    },
     location: {
       latitude: "",
       longitude: "",
@@ -115,13 +122,35 @@ export default function Vendors() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.mobile) {
-      toast.error("Mobile number is required");
+    if (!formData.mobile || !/^[6-9]\d{9}$/.test(formData.mobile)) {
+      toast.error("Enter a valid 10-digit mobile number");
       return;
     }
 
     if (!formData.business.name) {
       toast.error("Business name is required");
+      return;
+    }
+
+    if (
+      formData.business.gstNumber &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
+        formData.business.gstNumber,
+      )
+    ) {
+      toast.error("Enter a valid 15-character GST number");
+      return;
+    }
+
+    if (
+      !formData.bankDetails.accountHolderName ||
+      !formData.bankDetails.accountNumber ||
+      !formData.bankDetails.bankName ||
+      !formData.bankDetails.ifscCode
+    ) {
+      toast.error(
+        "Bank details (Account Holder, Account Number, Bank Name, IFSC) are required",
+      );
       return;
     }
 
@@ -147,6 +176,13 @@ export default function Vendors() {
         latitude: parseFloat(formData.location.latitude),
         longitude: parseFloat(formData.location.longitude),
         address: formData.location.address || undefined,
+      },
+      bankDetails: {
+        accountHolderName: formData.bankDetails.accountHolderName,
+        accountNumber: formData.bankDetails.accountNumber,
+        bankName: formData.bankDetails.bankName,
+        ifscCode: formData.bankDetails.ifscCode,
+        branchName: formData.bankDetails.branchName || undefined,
       },
       status: formData.status,
     };
@@ -179,6 +215,13 @@ export default function Vendors() {
           state: vendor.business?.state || "",
           pincode: vendor.business?.pincode || "",
         },
+        bankDetails: {
+          accountHolderName: vendor.bankDetails?.accountHolderName || "",
+          accountNumber: vendor.bankDetails?.accountNumber || "",
+          bankName: vendor.bankDetails?.bankName || "",
+          ifscCode: vendor.bankDetails?.ifscCode || "",
+          branchName: vendor.bankDetails?.branchName || "",
+        },
         location: {
           latitude: vendor.location?.coordinates?.[1] || "",
           longitude: vendor.location?.coordinates?.[0] || "",
@@ -200,6 +243,13 @@ export default function Vendors() {
           city: "",
           state: "",
           pincode: "",
+        },
+        bankDetails: {
+          accountHolderName: "",
+          accountNumber: "",
+          bankName: "",
+          ifscCode: "",
+          branchName: "",
         },
         location: {
           latitude: "",
@@ -442,6 +492,11 @@ export default function Vendors() {
                         {vendor.name}
                       </div>
                       <div className="text-xs text-gray-500">
+                        {vendor.vendorCode && (
+                          <span className="text-orange-600 font-medium">
+                            {vendor.vendorCode} •{" "}
+                          </span>
+                        )}
                         {vendor.business?.name}
                       </div>
                     </div>
@@ -576,12 +631,21 @@ export default function Vendors() {
                     <input
                       required
                       className="input-field"
-                      placeholder="Enter mobile number"
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                      pattern="[6-9][0-9]{9}"
+                      title="Enter a valid 10-digit mobile number starting with 6-9"
                       value={formData.mobile}
-                      onChange={(e) =>
-                        setFormData({ ...formData, mobile: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                        setFormData({ ...formData, mobile: val });
+                      }}
                     />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {formData.mobile.length}/10 digits
+                    </p>
                   </div>
 
                   <div>
@@ -650,19 +714,25 @@ export default function Vendors() {
                       <span className="text-gray-400">(Optional)</span>
                     </label>
                     <input
-                      className="input-field"
-                      placeholder="Enter GST number"
+                      className="input-field uppercase"
+                      placeholder="Enter 15-character GST number"
+                      maxLength={15}
                       value={formData.business.gstNumber}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           business: {
                             ...formData.business,
-                            gstNumber: e.target.value,
+                            gstNumber: e.target.value
+                              .toUpperCase()
+                              .slice(0, 15),
                           },
                         })
                       }
                     />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {formData.business.gstNumber.length}/15 characters
+                    </p>
                   </div>
 
                   <div>
@@ -770,6 +840,121 @@ export default function Vendors() {
                           business: {
                             ...formData.business,
                             pincode: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Details */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Bank Details <span className="text-red-500">*</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Holder Name{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter account holder name"
+                      value={formData.bankDetails.accountHolderName}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bankDetails: {
+                            ...formData.bankDetails,
+                            accountHolderName: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter account number"
+                      value={formData.bankDetails.accountNumber}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bankDetails: {
+                            ...formData.bankDetails,
+                            accountNumber: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field"
+                      placeholder="Enter bank name"
+                      value={formData.bankDetails.bankName}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bankDetails: {
+                            ...formData.bankDetails,
+                            bankName: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      IFSC Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      className="input-field uppercase"
+                      placeholder="Enter IFSC code"
+                      maxLength={11}
+                      value={formData.bankDetails.ifscCode}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bankDetails: {
+                            ...formData.bankDetails,
+                            ifscCode: e.target.value.toUpperCase(),
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Branch Name{" "}
+                      <span className="text-gray-400">(Optional)</span>
+                    </label>
+                    <input
+                      className="input-field"
+                      placeholder="Enter branch name"
+                      value={formData.bankDetails.branchName}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bankDetails: {
+                            ...formData.bankDetails,
+                            branchName: e.target.value,
                           },
                         })
                       }

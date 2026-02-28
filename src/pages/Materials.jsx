@@ -52,9 +52,18 @@ export default function Materials() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    specs: "",
+    brand: "",
     category: "",
     subCategory: "",
     unit: "",
+    mrp: "",
+    sellingPrice: "",
+    gst: "",
+    transportation: {
+      type: "free",
+      charge: "",
+    },
     status: "active",
   });
   const [imageFile, setImageFile] = useState(null);
@@ -140,6 +149,42 @@ export default function Materials() {
       formDataToSend.append("description", formData.description);
     }
 
+    if (formData.specs) {
+      formDataToSend.append("specs", formData.specs);
+    }
+
+    if (formData.brand) {
+      formDataToSend.append("brand", formData.brand);
+    }
+
+    if (formData.mrp) {
+      formDataToSend.append("mrp", formData.mrp);
+    }
+
+    if (formData.sellingPrice) {
+      formDataToSend.append("sellingPrice", formData.sellingPrice);
+    }
+
+    if (formData.gst) {
+      formDataToSend.append("gst", formData.gst);
+    }
+
+    if (formData.transportation.type) {
+      formDataToSend.append(
+        "transportation[type]",
+        formData.transportation.type,
+      );
+      if (
+        formData.transportation.type !== "free" &&
+        formData.transportation.charge
+      ) {
+        formDataToSend.append(
+          "transportation[charge]",
+          formData.transportation.charge,
+        );
+      }
+    }
+
     if (formData.subCategory) {
       formDataToSend.append("subCategory", formData.subCategory);
     }
@@ -171,9 +216,18 @@ export default function Materials() {
       setFormData({
         name: material.name,
         description: material.description || "",
+        specs: material.specs || "",
+        brand: material.brand || "",
         category: material.category?._id || material.category,
         subCategory: material.subCategory?._id || material.subCategory || "",
         unit: material.unit,
+        mrp: material.mrp || "",
+        sellingPrice: material.sellingPrice || "",
+        gst: material.gst || "",
+        transportation: {
+          type: material.transportation?.type || "free",
+          charge: material.transportation?.charge || "",
+        },
         status: material.status,
       });
       setImagePreview(material.image);
@@ -182,9 +236,18 @@ export default function Materials() {
       setFormData({
         name: "",
         description: "",
+        specs: "",
+        brand: "",
         category: "",
         subCategory: "",
         unit: "",
+        mrp: "",
+        sellingPrice: "",
+        gst: "",
+        transportation: {
+          type: "free",
+          charge: "",
+        },
         status: "active",
       });
       setImagePreview(null);
@@ -199,9 +262,18 @@ export default function Materials() {
     setFormData({
       name: "",
       description: "",
+      specs: "",
+      brand: "",
       category: "",
       subCategory: "",
       unit: "",
+      mrp: "",
+      sellingPrice: "",
+      gst: "",
+      transportation: {
+        type: "free",
+        charge: "",
+      },
       status: "active",
     });
     setImageFile(null);
@@ -442,10 +514,11 @@ export default function Materials() {
               <th className="text-left p-4 font-medium text-gray-600">
                 Category
               </th>
-              <th className="text-left p-4 font-medium text-gray-600">
-                Sub Category
-              </th>
+              <th className="text-left p-4 font-medium text-gray-600">Brand</th>
               <th className="text-left p-4 font-medium text-gray-600">Unit</th>
+              <th className="text-left p-4 font-medium text-gray-600">
+                MRP / Price
+              </th>
               <th className="text-left p-4 font-medium text-gray-600">
                 Status
               </th>
@@ -479,19 +552,31 @@ export default function Materials() {
                   <div className="font-medium text-gray-900">
                     {material.name}
                   </div>
-                  {material.description && (
+                  {material.specs && (
                     <div className="text-xs text-gray-500 truncate max-w-[200px]">
-                      {material.description}
+                      {material.specs}
                     </div>
                   )}
                 </td>
                 <td className="p-4 text-gray-600">
                   {getCategoryName(material)}
                 </td>
-                <td className="p-4 text-gray-600">
-                  {getSubCategoryName(material)}
-                </td>
+                <td className="p-4 text-gray-600">{material.brand || "-"}</td>
                 <td className="p-4 text-gray-600">{material.unit}</td>
+                <td className="p-4">
+                  {material.mrp ? (
+                    <div>
+                      <div className="text-xs text-gray-400 line-through">
+                        ₹{material.mrp}
+                      </div>
+                      <div className="text-sm font-medium text-green-700">
+                        ₹{material.sellingPrice || material.mrp}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
                 <td className="p-4">
                   <button
                     onClick={() => handleToggleStatus(material._id)}
@@ -527,7 +612,7 @@ export default function Materials() {
 
             {!loading && materials.length === 0 && (
               <tr>
-                <td colSpan="7" className="text-center text-gray-500 py-20">
+                <td colSpan="8" className="text-center text-gray-500 py-20">
                   No materials found
                 </td>
               </tr>
@@ -706,19 +791,147 @@ export default function Materials() {
                 {/* Description */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description{" "}
-                    <span className="text-gray-400">(Optional)</span>
+                    Specs <span className="text-gray-400">(Optional)</span>
                   </label>
                   <textarea
                     className="input-field"
                     rows="3"
-                    placeholder="Enter material description"
-                    value={formData.description}
+                    placeholder="Enter material specifications"
+                    value={formData.specs}
                     onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
+                      setFormData({ ...formData, specs: e.target.value })
                     }
                   ></textarea>
                 </div>
+
+                {/* Brand */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Brand <span className="text-gray-400">(Optional)</span>
+                  </label>
+                  <input
+                    className="input-field"
+                    placeholder="Enter brand name"
+                    value={formData.brand}
+                    onChange={(e) =>
+                      setFormData({ ...formData, brand: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* GST */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    GST % <span className="text-gray-400">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="e.g., 18"
+                    value={formData.gst}
+                    onChange={(e) =>
+                      setFormData({ ...formData, gst: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* MRP */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    MRP (₹) <span className="text-gray-400">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="Enter MRP"
+                    value={formData.mrp}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mrp: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Selling Price */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selling Price (₹){" "}
+                    <span className="text-gray-400">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="Enter selling price"
+                    value={formData.sellingPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sellingPrice: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Transportation Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transportation
+                  </label>
+                  <select
+                    className="input-field"
+                    value={formData.transportation.type}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        transportation: {
+                          ...formData.transportation,
+                          type: e.target.value,
+                          charge:
+                            e.target.value === "free"
+                              ? ""
+                              : formData.transportation.charge,
+                        },
+                      })
+                    }
+                  >
+                    <option value="free">Free</option>
+                    <option value="per_km">Per KM</option>
+                    <option value="fixed">Fixed</option>
+                  </select>
+                </div>
+
+                {/* Transportation Charge */}
+                {formData.transportation.type !== "free" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transport Charge (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="input-field"
+                      placeholder={
+                        formData.transportation.type === "per_km"
+                          ? "₹ per km"
+                          : "Fixed amount"
+                      }
+                      value={formData.transportation.charge}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          transportation: {
+                            ...formData.transportation,
+                            charge: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
