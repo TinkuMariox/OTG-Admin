@@ -133,13 +133,20 @@ export default function Vendors() {
     }
 
     if (
-      formData.business.gstNumber &&
-      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
-        formData.business.gstNumber,
-      )
+      formData.business.gstNumber
     ) {
-      toast.error("Enter a valid 15-character GST number");
-      return;
+      const cleanGst = formData.business.gstNumber.trim().toUpperCase();
+      if (
+        cleanGst.length > 0 &&
+        !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
+          cleanGst,
+        )
+      ) {
+        toast.error("Enter a valid 15-character GST number");
+        return;
+      }
+      // Update formData with cleaned GST for submission
+      formData.business.gstNumber = cleanGst;
     }
 
     if (

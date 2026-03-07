@@ -57,6 +57,8 @@ export default function Materials() {
     category: "",
     subCategory: "",
     unit: "",
+    minOrderQty: "1",
+    diameter: "",
     mrp: "",
     sellingPrice: "",
     gst: "",
@@ -66,6 +68,10 @@ export default function Materials() {
     },
     status: "active",
   });
+
+  // TMT bar diameter options
+  const tmtDiameters = ["6mm", "8mm", "10mm", "12mm", "16mm", "20mm", "25mm", "32mm", "36mm", "40mm"];
+  const isTMTMaterial = formData.name.toLowerCase().includes("tmt");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [filteredSubCategories, setFilteredSubCategories] = useState([]);
@@ -145,44 +151,28 @@ export default function Materials() {
     formDataToSend.append("unit", formData.unit);
     formDataToSend.append("status", formData.status);
 
-    if (formData.description) {
-      formDataToSend.append("description", formData.description);
-    }
+    // Always send these fields so backend persists them correctly
+    formDataToSend.append("description", formData.description || "");
+    formDataToSend.append("specs", formData.specs || "");
+    formDataToSend.append("brand", formData.brand || "");
+    formDataToSend.append("mrp", formData.mrp || "0");
+    formDataToSend.append("sellingPrice", formData.sellingPrice || "0");
+    formDataToSend.append("gst", formData.gst || "0");
+    formDataToSend.append("minOrderQty", formData.minOrderQty || "1");
+    formDataToSend.append("diameter", formData.diameter || "");
 
-    if (formData.specs) {
-      formDataToSend.append("specs", formData.specs);
-    }
-
-    if (formData.brand) {
-      formDataToSend.append("brand", formData.brand);
-    }
-
-    if (formData.mrp) {
-      formDataToSend.append("mrp", formData.mrp);
-    }
-
-    if (formData.sellingPrice) {
-      formDataToSend.append("sellingPrice", formData.sellingPrice);
-    }
-
-    if (formData.gst) {
-      formDataToSend.append("gst", formData.gst);
-    }
-
-    if (formData.transportation.type) {
+    formDataToSend.append(
+      "transportation[type]",
+      formData.transportation.type || "free",
+    );
+    if (
+      formData.transportation.type !== "free" &&
+      formData.transportation.charge
+    ) {
       formDataToSend.append(
-        "transportation[type]",
-        formData.transportation.type,
+        "transportation[charge]",
+        formData.transportation.charge,
       );
-      if (
-        formData.transportation.type !== "free" &&
-        formData.transportation.charge
-      ) {
-        formDataToSend.append(
-          "transportation[charge]",
-          formData.transportation.charge,
-        );
-      }
     }
 
     if (formData.subCategory) {
@@ -221,12 +211,14 @@ export default function Materials() {
         category: material.category?._id || material.category,
         subCategory: material.subCategory?._id || material.subCategory || "",
         unit: material.unit,
-        mrp: material.mrp || "",
-        sellingPrice: material.sellingPrice || "",
-        gst: material.gst || "",
+        minOrderQty: material.minOrderQty?.toString() || "1",
+        diameter: material.diameter || "",
+        mrp: material.mrp ? material.mrp.toString() : "",
+        sellingPrice: material.sellingPrice ? material.sellingPrice.toString() : "",
+        gst: material.gst ? material.gst.toString() : "",
         transportation: {
           type: material.transportation?.type || "free",
-          charge: material.transportation?.charge || "",
+          charge: material.transportation?.charge ? material.transportation.charge.toString() : "",
         },
         status: material.status,
       });
@@ -241,6 +233,8 @@ export default function Materials() {
         category: "",
         subCategory: "",
         unit: "",
+        minOrderQty: "1",
+        diameter: "",
         mrp: "",
         sellingPrice: "",
         gst: "",
@@ -267,6 +261,8 @@ export default function Materials() {
       category: "",
       subCategory: "",
       unit: "",
+      minOrderQty: "1",
+      diameter: "",
       mrp: "",
       sellingPrice: "",
       gst: "",
@@ -819,6 +815,46 @@ export default function Materials() {
                   />
                 </div>
 
+                {/* Min Order Qty */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Min Order Qty
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="input-field"
+                    placeholder="e.g., 1"
+                    value={formData.minOrderQty}
+                    onChange={(e) =>
+                      setFormData({ ...formData, minOrderQty: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* TMT Bar Diameter - shown only when name contains TMT */}
+                {isTMTMaterial && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Diameter (TMT Bar)
+                    </label>
+                    <select
+                      className="input-field"
+                      value={formData.diameter}
+                      onChange={(e) =>
+                        setFormData({ ...formData, diameter: e.target.value })
+                      }
+                    >
+                      <option value="">Select Diameter</option>
+                      {tmtDiameters.map((dia) => (
+                        <option key={dia} value={dia}>
+                          {dia}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* GST */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -933,6 +969,86 @@ export default function Materials() {
                   </div>
                 )}
               </div>
+
+              {/* Price Summary - shown when selling price or GST is entered */}
+              {(formData.sellingPrice || formData.gst) && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    Price Summary
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {formData.sellingPrice && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Base Selling Price:</span>
+                        <span className="font-medium">₹{parseFloat(formData.sellingPrice).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {formData.gst && formData.sellingPrice && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">GST ({formData.gst}%):</span>
+                          <span className="font-medium text-orange-600">
+                            + ₹{(parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t border-orange-200 pt-2">
+                          <span className="text-gray-600">Price after GST:</span>
+                          <span className="font-semibold">
+                            ₹{(parseFloat(formData.sellingPrice) + (parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100)).toFixed(2)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {formData.transportation.type === "fixed" && formData.transportation.charge && formData.sellingPrice && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Transportation (Fixed):</span>
+                          <span className="font-medium text-orange-600">
+                            + ₹{parseFloat(formData.transportation.charge).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t border-orange-200 pt-2">
+                          <span className="text-gray-700 font-semibold">Final Selling Price:</span>
+                          <span className="font-bold text-green-700 text-base">
+                            ₹{(
+                              parseFloat(formData.sellingPrice) +
+                              (parseFloat(formData.sellingPrice) * parseFloat(formData.gst || "0") / 100) +
+                              parseFloat(formData.transportation.charge)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {formData.transportation.type === "per_km" && formData.transportation.charge && formData.sellingPrice && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Transportation:</span>
+                        <span className="font-medium text-orange-600">
+                          + ₹{parseFloat(formData.transportation.charge).toFixed(2)}/km
+                        </span>
+                      </div>
+                    )}
+                    {formData.transportation.type === "free" && formData.sellingPrice && formData.gst && (
+                      <div className="flex justify-between border-t border-orange-200 pt-2">
+                        <span className="text-gray-700 font-semibold">Final Selling Price:</span>
+                        <span className="font-bold text-green-700 text-base">
+                          ₹{(
+                            parseFloat(formData.sellingPrice) +
+                            (parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {formData.sellingPrice && !formData.gst && formData.transportation.type === "free" && (
+                      <div className="flex justify-between border-t border-orange-200 pt-2">
+                        <span className="text-gray-700 font-semibold">Final Selling Price:</span>
+                        <span className="font-bold text-green-700 text-base">
+                          ₹{parseFloat(formData.sellingPrice).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
