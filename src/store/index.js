@@ -7,6 +7,7 @@ import vendorReducer from "./slices/vendorSlice";
 import userReducer from "./slices/userSlice";
 import bookingReducer from "./slices/bookingSlice";
 import transactionReducer from "./slices/transactionSlice";
+import staffReducer from "./slices/staffSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     users: userReducer,
     bookings: bookingReducer,
     transactions: transactionReducer,
+    staff: staffReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

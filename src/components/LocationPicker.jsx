@@ -225,7 +225,7 @@ export default function LocationPicker({
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 border-b">
+        <div className="relative p-4 border-b z-[1001]">
           <div className="relative">
             <input
               type="text"
@@ -242,7 +242,7 @@ export default function LocationPicker({
 
             {/* Search Results Dropdown */}
             {searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 z-10 mt-1 overflow-y-auto bg-white border rounded-lg shadow-lg top-full max-h-48">
+              <div className="absolute left-0 right-0 z-[1000] mt-1 overflow-y-auto bg-white border rounded-lg shadow-lg top-full max-h-48">
                 {searchResults.map((result, index) => (
                   <div
                     key={index}

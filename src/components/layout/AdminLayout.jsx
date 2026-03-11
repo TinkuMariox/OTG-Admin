@@ -12,6 +12,9 @@ import {
   FolderOpen,
   Grid3X3,
   Box,
+  Shield,
+  UserCog,
+  KeyRound,
 } from "lucide-react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -24,6 +27,7 @@ export default function AdminLayout({ children }) {
   const dispatch = useDispatch();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [materialMenuOpen, setMaterialMenuOpen] = useState(false);
+  const [staffMenuOpen, setStaffMenuOpen] = useState(false);
 
   // Material Management sub-items
   const materialSubItems = [
@@ -32,8 +36,19 @@ export default function AdminLayout({ children }) {
     { icon: Box, label: "Materials", path: "/materials" },
   ];
 
+  // Staff Management sub-items
+  const staffSubItems = [
+    { icon: UserCog, label: "Staff", path: "/staff" },
+    { icon: KeyRound, label: "Roles & Permissions", path: "/roles" },
+  ];
+
   // Check if any material sub-item is active
   const isMaterialActive = materialSubItems.some(
+    (item) => location.pathname === item.path,
+  );
+
+  // Check if any staff sub-item is active
+  const isStaffActive = staffSubItems.some(
     (item) => location.pathname === item.path,
   );
 
@@ -42,7 +57,10 @@ export default function AdminLayout({ children }) {
     if (isMaterialActive) {
       setMaterialMenuOpen(true);
     }
-  }, [isMaterialActive]);
+    if (isStaffActive) {
+      setStaffMenuOpen(true);
+    }
+  }, [isMaterialActive, isStaffActive]);
 
   const menuItems = [
     // DASHBOARD
@@ -168,6 +186,73 @@ export default function AdminLayout({ children }) {
             {materialMenuOpen && (
               <div className="pl-4 mt-1 ml-4 space-y-1 border-l-2 border-gray-200">
                 {materialSubItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
+
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                        active
+                          ? "bg-orange-500 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      <Icon
+                        size={18}
+                        className={active ? "text-white" : "text-gray-400"}
+                      />
+                      <span
+                        className={`text-sm ${
+                          active ? "font-semibold" : "font-normal"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Staff Management - Expandable Menu */}
+          <div>
+            <button
+              onClick={() => setStaffMenuOpen(!staffMenuOpen)}
+              className={`flex items-center justify-between w-full gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                isStaffActive
+                  ? "bg-orange-100 text-orange-600"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Shield
+                  size={20}
+                  className={
+                    isStaffActive ? "text-orange-500" : "text-gray-500"
+                  }
+                />
+                <span
+                  className={`text-sm ${
+                    isStaffActive ? "font-semibold" : "font-normal"
+                  }`}
+                >
+                  Staff Management
+                </span>
+              </div>
+              {staffMenuOpen ? (
+                <ChevronDown size={16} className="text-gray-500" />
+              ) : (
+                <ChevronRight size={16} className="text-gray-500" />
+              )}
+            </button>
+
+            {staffMenuOpen && (
+              <div className="pl-4 mt-1 ml-4 space-y-1 border-l-2 border-gray-200">
+                {staffSubItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.path);
 

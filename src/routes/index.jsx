@@ -15,6 +15,8 @@ import SubCategories from "../pages/SubCategories";
 import Materials from "../pages/Materials";
 import Bookings from "../pages/Booking";
 import Transactions from "../pages/Transactions";
+import Staff from "../pages/Staff";
+import Roles from "../pages/Roles";
 import CMS from "../pages/CMS";
 
 // Layout & Route Guards
@@ -66,6 +68,8 @@ const AppRoutes = () => {
           <Route path="/materials" element={<Materials />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/roles" element={<Roles />} />
           <Route path="/cms" element={<CMS />} />
         </Route>
       </Route>

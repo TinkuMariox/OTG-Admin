@@ -59,6 +59,7 @@ export default function Materials() {
     unit: "",
     minOrderQty: "1",
     diameter: "",
+    basicPrice: "",
     mrp: "",
     sellingPrice: "",
     gst: "",
@@ -145,6 +146,11 @@ export default function Materials() {
       return;
     }
 
+    if (!formData.basicPrice) {
+      toast.error("Please enter the basic price.");
+      return;
+    }
+
     const formDataToSend = new FormData();
     formDataToSend.append("name", formData.name);
     formDataToSend.append("category", formData.category);
@@ -155,8 +161,16 @@ export default function Materials() {
     formDataToSend.append("description", formData.description || "");
     formDataToSend.append("specs", formData.specs || "");
     formDataToSend.append("brand", formData.brand || "");
-    formDataToSend.append("mrp", formData.mrp || "0");
+    // MRP is auto-calculated: Basic Price + GST
+    const basicPrice = parseFloat(formData.basicPrice) || 0;
+    const gstPercent = parseFloat(formData.gst) || 0;
+    const calculatedMrp = basicPrice + (basicPrice * gstPercent) / 100;
+    formDataToSend.append("basicPrice", formData.basicPrice || "0");
+    formDataToSend.append("mrp", calculatedMrp.toString());
     formDataToSend.append("sellingPrice", formData.sellingPrice || "0");
+    const sellingPrice = parseFloat(formData.sellingPrice) || 0;
+    const finalSellingPrice = sellingPrice + (sellingPrice * gstPercent) / 100;
+    formDataToSend.append("finalSellingPrice", finalSellingPrice.toString());
     formDataToSend.append("gst", formData.gst || "0");
     formDataToSend.append("minOrderQty", formData.minOrderQty || "1");
     formDataToSend.append("diameter", formData.diameter || "");
@@ -213,6 +227,7 @@ export default function Materials() {
         unit: material.unit,
         minOrderQty: material.minOrderQty?.toString() || "1",
         diameter: material.diameter || "",
+        basicPrice: material.basicPrice ? material.basicPrice.toString() : "",
         mrp: material.mrp ? material.mrp.toString() : "",
         sellingPrice: material.sellingPrice ? material.sellingPrice.toString() : "",
         gst: material.gst ? material.gst.toString() : "",
@@ -235,6 +250,7 @@ export default function Materials() {
         unit: "",
         minOrderQty: "1",
         diameter: "",
+        basicPrice: "",
         mrp: "",
         sellingPrice: "",
         gst: "",
@@ -263,6 +279,7 @@ export default function Materials() {
       unit: "",
       minOrderQty: "1",
       diameter: "",
+      basicPrice: "",
       mrp: "",
       sellingPrice: "",
       gst: "",
@@ -566,7 +583,7 @@ export default function Materials() {
                         ₹{material.mrp}
                       </div>
                       <div className="text-sm font-medium text-green-700">
-                        ₹{material.sellingPrice || material.mrp}
+                        ₹{material.finalSellingPrice || material.sellingPrice || material.mrp}
                       </div>
                     </div>
                   ) : (
@@ -855,6 +872,25 @@ export default function Materials() {
                   </div>
                 )}
 
+                {/* Basic Price */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Basic Price (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    className="input-field"
+                    placeholder="Enter basic price"
+                    value={formData.basicPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, basicPrice: e.target.value })
+                    }
+                  />
+                </div>
+
                 {/* GST */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -874,20 +910,22 @@ export default function Materials() {
                   />
                 </div>
 
-                {/* MRP */}
+                {/* MRP (Auto-calculated) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    MRP (₹) <span className="text-gray-400">(Optional)</span>
+                    MRP (₹) <span className="text-gray-400">(Auto-calculated)</span>
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="input-field"
-                    placeholder="Enter MRP"
-                    value={formData.mrp}
-                    onChange={(e) =>
-                      setFormData({ ...formData, mrp: e.target.value })
+                    type="text"
+                    readOnly
+                    className="input-field bg-gray-100 cursor-not-allowed"
+                    value={
+                      formData.basicPrice
+                        ? `₹${(
+                            parseFloat(formData.basicPrice) +
+                            (parseFloat(formData.basicPrice) * parseFloat(formData.gst || "0")) / 100
+                          ).toFixed(2)}`
+                        : ""
                     }
                   />
                 </div>
@@ -895,8 +933,7 @@ export default function Materials() {
                 {/* Selling Price */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selling Price (₹){" "}
-                    <span className="text-gray-400">(Optional)</span>
+                    Selling Price (Basic) (₹) <span className="text-gray-400">(Optional)</span>
                   </label>
                   <input
                     type="number"
@@ -910,6 +947,24 @@ export default function Materials() {
                     }
                   />
                 </div>
+
+                {/* Final Selling Price (Auto-calculated) */}
+                {formData.sellingPrice && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Selling Price(₹) <span className="text-gray-400">(Auto-calculated)</span>
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      className="input-field bg-gray-100 cursor-not-allowed font-semibold text-green-700"
+                      value={`₹${(
+                        parseFloat(formData.sellingPrice) +
+                        (parseFloat(formData.sellingPrice) * parseFloat(formData.gst || "0")) / 100
+                      ).toFixed(2)}`}
+                    />
+                  </div>
+                )}
 
                 {/* Transportation Type */}
                 <div>
@@ -935,6 +990,7 @@ export default function Materials() {
                   >
                     <option value="free">Free</option>
                     <option value="per_km">Per KM</option>
+                    <option value="per_unit">Per Unit</option>
                     <option value="fixed">Fixed</option>
                   </select>
                 </div>
@@ -953,7 +1009,9 @@ export default function Materials() {
                       placeholder={
                         formData.transportation.type === "per_km"
                           ? "₹ per km"
-                          : "Fixed amount"
+                          : formData.transportation.type === "per_unit"
+                            ? "₹ per unit"
+                            : "Fixed amount"
                       }
                       value={formData.transportation.charge}
                       onChange={(e) =>
@@ -970,81 +1028,124 @@ export default function Materials() {
                 )}
               </div>
 
-              {/* Price Summary - shown when selling price or GST is entered */}
-              {(formData.sellingPrice || formData.gst) && (
+              {/* Price Summary - shown when basic price is entered */}
+              {formData.basicPrice && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">
                     Price Summary
                   </h4>
                   <div className="space-y-2 text-sm">
-                    {formData.sellingPrice && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Basic Price:</span>
+                      <span className="font-medium">₹{parseFloat(formData.basicPrice).toFixed(2)}</span>
+                    </div>
+                    {formData.gst && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Base Selling Price:</span>
-                        <span className="font-medium">₹{parseFloat(formData.sellingPrice).toFixed(2)}</span>
+                        <span className="text-gray-600">GST ({formData.gst}%):</span>
+                        <span className="font-medium text-orange-600">
+                          + ₹{(parseFloat(formData.basicPrice) * parseFloat(formData.gst) / 100).toFixed(2)}
+                        </span>
                       </div>
                     )}
-                    {formData.gst && formData.sellingPrice && (
+                    <div className="flex justify-between border-t border-orange-200 pt-2">
+                      <span className="text-gray-700 font-semibold">MRP (incl. GST):</span>
+                      <span className="font-bold text-green-700 text-base">
+                        ₹{(
+                          parseFloat(formData.basicPrice) +
+                          (parseFloat(formData.basicPrice) * parseFloat(formData.gst || "0") / 100)
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                    {formData.sellingPrice && (
                       <>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">GST ({formData.gst}%):</span>
-                          <span className="font-medium text-orange-600">
-                            + ₹{(parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100).toFixed(2)}
-                          </span>
-                        </div>
                         <div className="flex justify-between border-t border-orange-200 pt-2">
-                          <span className="text-gray-600">Price after GST:</span>
-                          <span className="font-semibold">
-                            ₹{(parseFloat(formData.sellingPrice) + (parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100)).toFixed(2)}
-                          </span>
+                          <span className="text-gray-600">Selling Price:</span>
+                          <span className="font-medium">₹{parseFloat(formData.sellingPrice).toFixed(2)}</span>
                         </div>
-                      </>
-                    )}
-                    {formData.transportation.type === "fixed" && formData.transportation.charge && formData.sellingPrice && (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Transportation (Fixed):</span>
-                          <span className="font-medium text-orange-600">
-                            + ₹{parseFloat(formData.transportation.charge).toFixed(2)}
-                          </span>
-                        </div>
+                        {formData.gst && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">GST on Selling Price ({formData.gst}%):</span>
+                            <span className="font-medium text-orange-600">
+                              + ₹{(parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex justify-between border-t border-orange-200 pt-2">
-                          <span className="text-gray-700 font-semibold">Final Selling Price:</span>
+                          <span className="text-gray-700 font-semibold">Selling Price (SP):</span>
                           <span className="font-bold text-green-700 text-base">
                             ₹{(
                               parseFloat(formData.sellingPrice) +
-                              (parseFloat(formData.sellingPrice) * parseFloat(formData.gst || "0") / 100) +
-                              parseFloat(formData.transportation.charge)
+                              (parseFloat(formData.sellingPrice) * parseFloat(formData.gst || "0") / 100)
                             ).toFixed(2)}
                           </span>
                         </div>
                       </>
                     )}
-                    {formData.transportation.type === "per_km" && formData.transportation.charge && formData.sellingPrice && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Transportation:</span>
-                        <span className="font-medium text-orange-600">
-                          + ₹{parseFloat(formData.transportation.charge).toFixed(2)}/km
-                        </span>
-                      </div>
+                    {formData.transportation.type === "fixed" && formData.transportation.charge && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Transportation (Fixed):</span>
+                          <span className="font-medium">₹{parseFloat(formData.transportation.charge).toFixed(2)}</span>
+                        </div>
+                        {formData.gst && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">GST on Transport ({formData.gst}%):</span>
+                            <span className="font-medium text-orange-600">
+                              + ₹{(parseFloat(formData.transportation.charge) * parseFloat(formData.gst) / 100).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-semibold">Transport (incl. GST):</span>
+                          <span className="font-semibold text-orange-600">
+                            ₹{(parseFloat(formData.transportation.charge) + (parseFloat(formData.transportation.charge) * parseFloat(formData.gst || "0") / 100)).toFixed(2)}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    {formData.transportation.type === "free" && formData.sellingPrice && formData.gst && (
-                      <div className="flex justify-between border-t border-orange-200 pt-2">
-                        <span className="text-gray-700 font-semibold">Final Selling Price:</span>
-                        <span className="font-bold text-green-700 text-base">
-                          ₹{(
-                            parseFloat(formData.sellingPrice) +
-                            (parseFloat(formData.sellingPrice) * parseFloat(formData.gst) / 100)
-                          ).toFixed(2)}
-                        </span>
-                      </div>
+                    {formData.transportation.type === "per_km" && formData.transportation.charge && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Transportation (Per KM):</span>
+                          <span className="font-medium">₹{parseFloat(formData.transportation.charge).toFixed(2)}/km</span>
+                        </div>
+                        {formData.gst && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">GST on Transport ({formData.gst}%):</span>
+                            <span className="font-medium text-orange-600">
+                              + ₹{(parseFloat(formData.transportation.charge) * parseFloat(formData.gst) / 100).toFixed(2)}/km
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-semibold">Transport (incl. GST):</span>
+                          <span className="font-semibold text-orange-600">
+                            ₹{(parseFloat(formData.transportation.charge) + (parseFloat(formData.transportation.charge) * parseFloat(formData.gst || "0") / 100)).toFixed(2)}/km
+                          </span>
+                        </div>
+                      </>
                     )}
-                    {formData.sellingPrice && !formData.gst && formData.transportation.type === "free" && (
-                      <div className="flex justify-between border-t border-orange-200 pt-2">
-                        <span className="text-gray-700 font-semibold">Final Selling Price:</span>
-                        <span className="font-bold text-green-700 text-base">
-                          ₹{parseFloat(formData.sellingPrice).toFixed(2)}
-                        </span>
-                      </div>
+                    {formData.transportation.type === "per_unit" && formData.transportation.charge && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Transportation (Per Unit):</span>
+                          <span className="font-medium">₹{parseFloat(formData.transportation.charge).toFixed(2)}/unit</span>
+                        </div>
+                        {formData.gst && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">GST on Transport ({formData.gst}%):</span>
+                            <span className="font-medium text-orange-600">
+                              + ₹{(parseFloat(formData.transportation.charge) * parseFloat(formData.gst) / 100).toFixed(2)}/unit
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-semibold">Transport (incl. GST):</span>
+                          <span className="font-semibold text-orange-600">
+                            ₹{(parseFloat(formData.transportation.charge) + (parseFloat(formData.transportation.charge) * parseFloat(formData.gst || "0") / 100)).toFixed(2)}/unit
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
