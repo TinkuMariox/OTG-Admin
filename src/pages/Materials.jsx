@@ -63,6 +63,7 @@ export default function Materials() {
     mrp: "",
     sellingPrice: "",
     gst: "",
+    requestQuote: false,
     transportation: {
       type: "free",
       charge: "",
@@ -146,7 +147,7 @@ export default function Materials() {
       return;
     }
 
-    if (!formData.basicPrice) {
+    if (!formData.requestQuote && !formData.basicPrice) {
       toast.error("Please enter the basic price.");
       return;
     }
@@ -156,6 +157,7 @@ export default function Materials() {
     formDataToSend.append("category", formData.category);
     formDataToSend.append("unit", formData.unit);
     formDataToSend.append("status", formData.status);
+    formDataToSend.append("requestQuote", formData.requestQuote ? "true" : "false");
 
     // Always send these fields so backend persists them correctly
     formDataToSend.append("description", formData.description || "");
@@ -231,6 +233,7 @@ export default function Materials() {
         mrp: material.mrp ? material.mrp.toString() : "",
         sellingPrice: material.sellingPrice ? material.sellingPrice.toString() : "",
         gst: material.gst ? material.gst.toString() : "",
+        requestQuote: material.requestQuote || false,
         transportation: {
           type: material.transportation?.type || "free",
           charge: material.transportation?.charge ? material.transportation.charge.toString() : "",
@@ -254,6 +257,7 @@ export default function Materials() {
         mrp: "",
         sellingPrice: "",
         gst: "",
+        requestQuote: false,
         transportation: {
           type: "free",
           charge: "",
@@ -283,6 +287,7 @@ export default function Materials() {
       mrp: "",
       sellingPrice: "",
       gst: "",
+      requestQuote: false,
       transportation: {
         type: "free",
         charge: "",
@@ -577,7 +582,11 @@ export default function Materials() {
                 <td className="p-4 text-gray-600">{material.brand || "-"}</td>
                 <td className="p-4 text-gray-600">{material.unit}</td>
                 <td className="p-4">
-                  {material.mrp ? (
+                  {material.requestQuote ? (
+                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">
+                      Request a Quote
+                    </span>
+                  ) : material.mrp ? (
                     <div>
                       <div className="text-xs text-gray-400 line-through">
                         ₹{material.mrp}
@@ -872,7 +881,34 @@ export default function Materials() {
                   </div>
                 )}
 
+                {/* Request a Quote Toggle */}
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={formData.requestQuote}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            requestQuote: e.target.checked,
+                            ...(e.target.checked ? { basicPrice: "", mrp: "", sellingPrice: "", gst: "" } : {}),
+                          })
+                        }
+                      />
+                      <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-orange-500 transition"></div>
+                      <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition peer-checked:translate-x-5"></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Request a Quote
+                    </span>
+                    <span className="text-xs text-gray-400">(Enable if pricing is not fixed — MRP will not be required)</span>
+                  </label>
+                </div>
+
                 {/* Basic Price */}
+                {!formData.requestQuote && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Basic Price (₹) <span className="text-red-500">*</span>
@@ -890,8 +926,10 @@ export default function Materials() {
                     }
                   />
                 </div>
+                )}
 
                 {/* GST */}
+                {!formData.requestQuote && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     GST % <span className="text-gray-400">(Optional)</span>
@@ -909,8 +947,10 @@ export default function Materials() {
                     }
                   />
                 </div>
+                )}
 
                 {/* MRP (Auto-calculated) */}
+                {!formData.requestQuote && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     MRP (₹) <span className="text-gray-400">(Auto-calculated)</span>
@@ -929,8 +969,10 @@ export default function Materials() {
                     }
                   />
                 </div>
+                )}
 
                 {/* Selling Price */}
+                {!formData.requestQuote && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Selling Price (Basic) (₹) <span className="text-gray-400">(Optional)</span>
@@ -947,9 +989,10 @@ export default function Materials() {
                     }
                   />
                 </div>
+                )}
 
                 {/* Final Selling Price (Auto-calculated) */}
-                {formData.sellingPrice && (
+                {!formData.requestQuote && formData.sellingPrice && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Selling Price(₹) <span className="text-gray-400">(Auto-calculated)</span>
@@ -1028,8 +1071,8 @@ export default function Materials() {
                 )}
               </div>
 
-              {/* Price Summary - shown when basic price is entered */}
-              {formData.basicPrice && (
+              {/* Price Summary - shown when basic price is entered and not request a quote */}
+              {!formData.requestQuote && formData.basicPrice && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">
                     Price Summary
