@@ -74,8 +74,8 @@ export default function Materials() {
   // TMT bar diameter options
   const tmtDiameters = ["6mm", "8mm", "10mm", "12mm", "16mm", "20mm", "25mm", "32mm", "36mm", "40mm"];
   const isTMTMaterial = formData.name.toLowerCase().includes("tmt");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [filteredSubCategories, setFilteredSubCategories] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -195,11 +195,33 @@ export default function Materials() {
       formDataToSend.append("subCategory", formData.subCategory);
     }
 
-    if (imageFile) {
-      formDataToSend.append("image", imageFile);
-    } else if (!editingId) {
-      toast.error("Please select an image for the material.");
+    if (imageFiles.length > 0) {
+      imageFiles.forEach((file) => {
+        formDataToSend.append("images", file);
+      });
+    }
+
+    // Send existing images that should be kept (for edit mode)
+    if (editingId) {
+      const existingImages = imagePreviews.filter(
+        (p) => typeof p === "string" && p.startsWith("http")
+      );
+      formDataToSend.append("existingImages", JSON.stringify(existingImages));
+    }
+
+    if (!editingId && imageFiles.length === 0) {
+      toast.error("Please select at least one image for the material.");
       return;
+    }
+
+    if (editingId) {
+      const existingCount = imagePreviews.filter(
+        (p) => typeof p === "string" && p.startsWith("http")
+      ).length;
+      if (existingCount + imageFiles.length === 0) {
+        toast.error("Please keep or upload at least one image.");
+        return;
+      }
     }
 
     try {
@@ -240,7 +262,7 @@ export default function Materials() {
         },
         status: material.status,
       });
-      setImagePreview(material.image);
+      setImagePreviews(material.images && material.images.length > 0 ? [...material.images] : material.image ? [material.image] : []);
     } else {
       setEditingId(null);
       setFormData({
@@ -264,9 +286,9 @@ export default function Materials() {
         },
         status: "active",
       });
-      setImagePreview(null);
+      setImagePreviews([]);
     }
-    setImageFile(null);
+    setImageFiles([]);
     setIsModalOpen(true);
   };
 
@@ -294,8 +316,8 @@ export default function Materials() {
       },
       status: "active",
     });
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   const handleDelete = async (id) => {
@@ -309,23 +331,42 @@ export default function Materials() {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    const totalImages = imagePreviews.length + files.length;
+    if (totalImages > 5) {
+      toast.error("You can upload a maximum of 5 images.");
+      return;
     }
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+    const validFiles = [];
+    const newPreviews = [];
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 5MB limit.`);
+        continue;
+      }
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    }
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const removeImage = (index) => {
+    const preview = imagePreviews[index];
+    // Check if it's a blob URL (newly added file) or an existing S3 URL
+    const isNewFile = preview && preview.startsWith("blob:");
+    if (isNewFile) {
+      // Find which new file index this corresponds to
+      const existingCount = imagePreviews
+        .slice(0, index)
+        .filter((p) => !p.startsWith("blob:")).length;
+      const newFileIndex = index - existingCount;
+      setImageFiles((prev) => prev.filter((_, i) => i !== newFileIndex));
+    }
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Deleted materials modal handlers
@@ -553,9 +594,9 @@ export default function Materials() {
               >
                 <td className="p-4">
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                    {material.image ? (
+                    {(material.images?.[0] || material.image) ? (
                       <img
-                        src={material.image}
+                        src={material.images?.[0] || material.image}
                         alt={material.name}
                         className="w-full h-full object-cover"
                       />
@@ -660,38 +701,55 @@ export default function Materials() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Image Upload */}
+              {/* Image Upload - Multiple */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image {!editingId && <span className="text-red-500">*</span>}
+                  Images <span className="text-red-500">*</span>
+                  <span className="text-xs text-gray-400 ml-1">(Min 1, Max 5 — at least 1 required)</span>
                 </label>
-                <div className="relative">
-                  {imagePreview ? (
-                    <div className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-100">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                      >
-                        <X size={16} />
-                      </button>
+                <div className="space-y-3">
+                  {/* Image Previews Grid */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                      {imagePreviews.map((preview, index) => (
+                        <div
+                          key={index}
+                          className="relative w-full aspect-square rounded-lg overflow-hidden bg-gray-100 border"
+                        >
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600"
+                          >
+                            <X size={14} />
+                          </button>
+                          {index === 0 && (
+                            <span className="absolute bottom-1 left-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ) : (
+                  )}
+
+                  {/* Upload Button */}
+                  {imagePreviews.length < 5 && (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-orange-500 transition"
+                      className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-orange-500 transition"
                     >
-                      <Image size={40} className="text-gray-400 mb-2" />
+                      <Image size={32} className="text-gray-400 mb-2" />
                       <p className="text-sm text-gray-500">
-                        Click to upload image
+                        Click to upload images ({imagePreviews.length}/5)
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Max 5MB (JPEG, PNG, GIF, WebP)
+                        Max 5MB each (JPEG, PNG, GIF, WebP)
                       </p>
                     </div>
                   )}
@@ -700,6 +758,7 @@ export default function Materials() {
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp"
                     onChange={handleImageChange}
+                    multiple
                     className="hidden"
                   />
                 </div>
@@ -1242,9 +1301,9 @@ export default function Materials() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200">
-                        {material.image ? (
+                        {(material.images?.[0] || material.image) ? (
                           <img
-                            src={material.image}
+                            src={material.images?.[0] || material.image}
                             alt={material.name}
                             className="w-full h-full object-cover"
                           />

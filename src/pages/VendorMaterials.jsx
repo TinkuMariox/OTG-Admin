@@ -306,9 +306,9 @@ export default function VendorMaterials() {
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 overflow-hidden bg-gray-100 rounded-lg">
-                      {vm.material?.image ? (
+                      {(vm.material?.images?.[0] || vm.material?.image) ? (
                         <img
-                          src={vm.material.image}
+                          src={vm.material.images?.[0] || vm.material.image}
                           alt={vm.material.name}
                           className="object-cover w-full h-full"
                         />
@@ -495,9 +495,9 @@ export default function VendorMaterials() {
                           }
                         >
                           <div className="w-8 h-8 overflow-hidden bg-gray-100 rounded">
-                            {material.image ? (
+                            {(material.images?.[0] || material.image) ? (
                               <img
-                                src={material.image}
+                                src={material.images?.[0] || material.image}
                                 alt={material.name}
                                 className="object-cover w-full h-full"
                               />

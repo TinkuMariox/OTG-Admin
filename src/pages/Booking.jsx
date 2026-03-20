@@ -295,9 +295,9 @@ export default function Bookings() {
                   {/* Material */}
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      {booking.material?.image ? (
+                      {(booking.material?.images?.[0] || booking.material?.image) ? (
                         <img
-                          src={booking.material.image}
+                          src={booking.material.images?.[0] || booking.material.image}
                           alt=""
                           className="w-8 h-8 rounded object-cover"
                         />
