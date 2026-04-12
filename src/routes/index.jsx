@@ -18,6 +18,8 @@ import Transactions from "../pages/Transactions";
 import Staff from "../pages/Staff";
 import Roles from "../pages/Roles";
 import CMS from "../pages/CMS";
+import Configuration from "../pages/Configuration";
+import Notifications from "../pages/Notifications";
 
 // Layout & Route Guards
 import AdminLayout from "../components/layout/AdminLayout";
@@ -71,6 +73,8 @@ const AppRoutes = () => {
           <Route path="/staff" element={<Staff />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/cms" element={<CMS />} />
+          <Route path="/config/:service" element={<Configuration />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
       </Route>
 

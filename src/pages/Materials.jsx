@@ -427,13 +427,13 @@ export default function Materials() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Materials</h1>
           <p className="text-sm text-gray-500">Manage construction materials</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-shrink-0">
           <button onClick={openDeletedModal} className="btn-secondary">
             <Trash size={18} /> Deleted
           </button>
@@ -562,8 +562,8 @@ export default function Materials() {
       )}
 
       {/* TABLE */}
-      <div className="bg-white border rounded-xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left p-4 font-medium text-gray-600">Image</th>
@@ -624,16 +624,16 @@ export default function Materials() {
                 <td className="p-4 text-gray-600">{material.unit}</td>
                 <td className="p-4">
                   {material.requestQuote ? (
-                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">
-                      Request a Quote
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap">
+                      Quote
                     </span>
                   ) : material.mrp ? (
                     <div>
                       <div className="text-xs text-gray-400 line-through">
-                        ₹{material.mrp}
+                        ₹{Math.round(material.mrp)}
                       </div>
                       <div className="text-sm font-medium text-green-700">
-                        ₹{material.finalSellingPrice || material.sellingPrice || material.mrp}
+                        ₹{Math.round(material.finalSellingPrice || material.sellingPrice || material.mrp)}
                       </div>
                     </div>
                   ) : (

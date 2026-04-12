@@ -8,6 +8,7 @@ import userReducer from "./slices/userSlice";
 import bookingReducer from "./slices/bookingSlice";
 import transactionReducer from "./slices/transactionSlice";
 import staffReducer from "./slices/staffSlice";
+import bannerReducer from "./slices/bannerSlice";
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     bookings: bookingReducer,
     transactions: transactionReducer,
     staff: staffReducer,
+    banners: bannerReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

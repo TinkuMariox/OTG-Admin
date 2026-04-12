@@ -71,19 +71,224 @@ const getStatusConfig = (status) =>
 const getPaymentConfig = (status) =>
   PAYMENT_OPTIONS.find((s) => s.value === status) || PAYMENT_OPTIONS[0];
 
+// Demo data for client preview
+const DEMO_BOOKINGS = [
+  {
+    _id: "demo1",
+    bookingId: "OTG-2026-0001",
+    site: "Prestige Lakeside Habitat, Whitefield",
+    createdAt: "2026-04-10T09:30:00Z",
+    updatedAt: "2026-04-11T14:00:00Z",
+    material: { name: "Bosch GBM 350 Rotary Drill", unit: "Pieces", images: [] },
+    quantity: 5,
+    unit: "Pieces",
+    price: 3200,
+    totalAmount: 16000,
+    vendor: { name: "Sri Balaji Hardware", mobile: "9876543210", email: "balaji@hardware.com" },
+    user: { name: "Rajesh Kumar", mobile: "9988776655", email: "rajesh@build.com" },
+    status: "confirmed",
+    paymentStatus: "partial",
+    notes: "Deliver before 10 AM at gate 2",
+  },
+  {
+    _id: "demo2",
+    bookingId: "OTG-2026-0002",
+    site: "Brigade Gateway, Rajajinagar",
+    createdAt: "2026-04-09T11:15:00Z",
+    updatedAt: "2026-04-10T16:45:00Z",
+    material: { name: "UltraTech OPC 53 Grade Cement", unit: "Bags", images: [] },
+    quantity: 200,
+    unit: "Bags",
+    price: 380,
+    totalAmount: 76000,
+    vendor: { name: "Ambika Cement Depot", mobile: "9123456780", email: "ambika@cement.com" },
+    user: { name: "Suresh Patel", mobile: "9871234560", email: "suresh@construct.in" },
+    status: "in_transit",
+    paymentStatus: "pending",
+    notes: "Requires crane for unloading",
+  },
+  {
+    _id: "demo3",
+    bookingId: "OTG-2026-0003",
+    site: "Sobha Dream Acres, Panathur",
+    createdAt: "2026-04-08T08:00:00Z",
+    updatedAt: "2026-04-09T12:30:00Z",
+    material: { name: "Tata Tiscon 12mm TMT Bar", unit: "Tonnes", images: [] },
+    quantity: 3,
+    unit: "Tonnes",
+    price: 52000,
+    totalAmount: 156000,
+    vendor: { name: "National Steel Traders", mobile: "9001234567", email: "national@steel.in" },
+    user: { name: "Anita Sharma", mobile: "9345678901", email: "anita@infra.com" },
+    status: "delivered",
+    paymentStatus: "completed",
+    notes: "",
+  },
+  {
+    _id: "demo4",
+    bookingId: "OTG-2026-0004",
+    site: "Godrej Splendour, Bellandur",
+    createdAt: "2026-04-07T14:20:00Z",
+    updatedAt: "2026-04-07T14:20:00Z",
+    material: { name: "Asian Paints Primer 20L", unit: "Buckets", images: [] },
+    quantity: 30,
+    unit: "Buckets",
+    price: 1100,
+    totalAmount: 33000,
+    vendor: { name: "Gupta Paint House", mobile: "9567890123", email: "gupta@paints.com" },
+    user: { name: "Mohammed Irfan", mobile: "9654321098", email: "irfan@homes.in" },
+    status: "pending",
+    paymentStatus: "pending",
+    notes: "White primer only, no tinting",
+  },
+  {
+    _id: "demo5",
+    bookingId: "OTG-2026-0005",
+    site: "Mantri Serenity, Kanakapura Road",
+    createdAt: "2026-04-06T07:45:00Z",
+    updatedAt: "2026-04-08T09:15:00Z",
+    material: { name: "Bosch GWS 600 Angle Grinder", unit: "Pieces", images: [] },
+    quantity: 2,
+    unit: "Pieces",
+    price: 5600,
+    totalAmount: 11200,
+    vendor: { name: "Sri Balaji Hardware", mobile: "9876543210", email: "balaji@hardware.com" },
+    user: { name: "Priya Nair", mobile: "9012345678", email: "priya@buildcon.in" },
+    status: "cancelled",
+    paymentStatus: "pending",
+    notes: "Customer cancelled due to project delay",
+  },
+  {
+    _id: "demo6",
+    bookingId: "OTG-2026-0006",
+    site: "Puravankara Purva Zenium, Hosur Road",
+    createdAt: "2026-04-05T10:00:00Z",
+    updatedAt: "2026-04-06T11:30:00Z",
+    material: { name: "MS Binding Wire 18 Gauge", unit: "Kg", images: [] },
+    quantity: 500,
+    unit: "Kg",
+    price: 72,
+    totalAmount: 36000,
+    vendor: { name: "KR Wire & Metal", mobile: "9234567890", email: "kr@wire.in" },
+    user: { name: "Vikram Singh", mobile: "9876012345", email: "vikram@develope.com" },
+    status: "delivered",
+    paymentStatus: "completed",
+    notes: "",
+  },
+  {
+    _id: "demo7",
+    bookingId: "OTG-2026-0007",
+    site: "Embassy Springs, Devanahalli",
+    createdAt: "2026-04-11T13:00:00Z",
+    updatedAt: "2026-04-11T13:00:00Z",
+    material: { name: "Bosch GDC 141 Tile Cutter", unit: "Pieces", images: [] },
+    quantity: 4,
+    unit: "Pieces",
+    price: 8400,
+    totalAmount: 33600,
+    vendor: { name: "Tool Masters", mobile: "9345670000", email: "tool@masters.com" },
+    user: { name: "Deepak Joshi", mobile: "9111222333", email: "deepak@homez.in" },
+    status: "confirmed",
+    paymentStatus: "partial",
+    notes: "Include extra blades in delivery",
+  },
+  {
+    _id: "demo8",
+    bookingId: "OTG-2026-0008",
+    site: "Salarpuria Sattva, Electronic City",
+    createdAt: "2026-04-04T16:30:00Z",
+    updatedAt: "2026-04-07T10:00:00Z",
+    material: { name: "River Sand (M-Sand)", unit: "CFT", images: [] },
+    quantity: 1000,
+    unit: "CFT",
+    price: 45,
+    totalAmount: 45000,
+    vendor: { name: "Kaveri Sand Suppliers", mobile: "9400011122", email: "kaveri@sand.com" },
+    user: { name: "Lakshmi Devi", mobile: "9888990011", email: "lakshmi@construct.in" },
+    status: "in_transit",
+    paymentStatus: "partial",
+    notes: "Deliver in 2 trips — 500 CFT each",
+  },
+  {
+    _id: "demo9",
+    bookingId: "OTG-2026-0009",
+    site: "Total Environment, Jakkur",
+    createdAt: "2026-04-03T09:45:00Z",
+    updatedAt: "2026-04-05T18:00:00Z",
+    material: { name: "Stanley Demolition Hammer", unit: "Pieces", images: [] },
+    quantity: 1,
+    unit: "Pieces",
+    price: 24500,
+    totalAmount: 24500,
+    vendor: { name: "Tool Masters", mobile: "9345670000", email: "tool@masters.com" },
+    user: { name: "Arjun Reddy", mobile: "9222333444", email: "arjun@builders.in" },
+    status: "delivered",
+    paymentStatus: "completed",
+    notes: "",
+  },
+  {
+    _id: "demo10",
+    bookingId: "OTG-2026-0010",
+    site: "Prestige Falcon City, Kanakapura",
+    createdAt: "2026-04-12T06:00:00Z",
+    updatedAt: "2026-04-12T06:00:00Z",
+    material: { name: "ACC PPC Cement", unit: "Bags", images: [] },
+    quantity: 500,
+    unit: "Bags",
+    price: 360,
+    totalAmount: 180000,
+    vendor: { name: "Ambika Cement Depot", mobile: "9123456780", email: "ambika@cement.com" },
+    user: { name: "Ravi Shankar", mobile: "9666777888", email: "ravi@infrabuild.in" },
+    status: "pending",
+    paymentStatus: "pending",
+    notes: "Delivery at basement level — need advance notice",
+  },
+];
+
 export default function Bookings() {
   const dispatch = useDispatch();
-  const { bookings, loading, error, message, pagination } = useSelector(
+  const { bookings: apiBookings, loading, error, message, pagination } = useSelector(
     (state) => state.bookings,
   );
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [filters, setFilters] = useState({
+    search: "",
     status: "",
     paymentStatus: "",
     fromDate: "",
     toDate: "",
+  });
+
+  // Use demo data when no real bookings exist
+  const isDemo = !loading && apiBookings.length === 0;
+  const allBookings = isDemo ? DEMO_BOOKINGS : apiBookings;
+
+  // Client-side filtering (works for both demo and real data)
+  const bookings = allBookings.filter((b) => {
+    if (filters.status && b.status !== filters.status) return false;
+    if (filters.paymentStatus && b.paymentStatus !== filters.paymentStatus) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      const match =
+        (b.bookingId || "").toLowerCase().includes(q) ||
+        (b.material?.name || "").toLowerCase().includes(q) ||
+        (b.vendor?.name || "").toLowerCase().includes(q) ||
+        (b.user?.name || "").toLowerCase().includes(q) ||
+        (b.site || "").toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    if (filters.fromDate) {
+      const from = new Date(filters.fromDate);
+      if (new Date(b.createdAt) < from) return false;
+    }
+    if (filters.toDate) {
+      const to = new Date(filters.toDate);
+      to.setHours(23, 59, 59, 999);
+      if (new Date(b.createdAt) > to) return false;
+    }
+    return true;
   });
 
   // Fetch bookings with filters
@@ -119,7 +324,7 @@ export default function Bookings() {
   };
 
   const clearFilters = () => {
-    setFilters({ status: "", paymentStatus: "", fromDate: "", toDate: "" });
+    setFilters({ search: "", status: "", paymentStatus: "", fromDate: "", toDate: "" });
   };
 
   const formatDate = (dateStr) => {
@@ -138,8 +343,15 @@ export default function Bookings() {
 
   return (
     <div className="space-y-6">
+      {/* DEMO BANNER */}
+      {isDemo && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm flex items-center gap-2">
+          <span className="font-semibold">Demo Mode:</span> Showing sample bookings for preview. Real data will appear once bookings are placed.
+        </div>
+      )}
+
       {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="text-sm text-gray-500">
@@ -149,10 +361,38 @@ export default function Bookings() {
         <div className="text-sm text-gray-500">
           Total:{" "}
           <span className="font-semibold text-gray-900">
-            {pagination?.total || bookings.length}
+            {bookings.length}
           </span>{" "}
           bookings
         </div>
+      </div>
+
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {STATUS_OPTIONS.map((s) => {
+          const count = allBookings.filter((b) => b.status === s.value).length;
+          return (
+            <button
+              key={s.value}
+              onClick={() =>
+                setFilters((f) => ({
+                  ...f,
+                  status: f.status === s.value ? "" : s.value,
+                }))
+              }
+              className={`bg-white border rounded-xl p-4 text-left transition hover:shadow-md ${
+                filters.status === s.value
+                  ? "ring-2 ring-orange-400"
+                  : ""
+              }`}
+            >
+              <p className="text-2xl font-bold text-gray-900">{count}</p>
+              <p className={`text-xs font-medium mt-1 inline-block px-2 py-0.5 rounded-full ${s.color}`}>
+                {s.label}
+              </p>
+            </button>
+          );
+        })}
       </div>
 
       {/* FILTERS */}
@@ -167,7 +407,24 @@ export default function Bookings() {
         </button>
 
         {isFilterOpen && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="relative lg:col-span-1">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+                className="input-field pl-10"
+              />
+            </div>
+
             {/* Status Filter */}
             <select
               value={filters.status}
@@ -239,8 +496,8 @@ export default function Bookings() {
       )}
 
       {/* TABLE */}
-      <div className="bg-white border rounded-xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[900px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left p-4 font-medium text-gray-600">
