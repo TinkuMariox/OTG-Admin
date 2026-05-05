@@ -5,6 +5,7 @@ import subCategoryReducer from "./slices/subCategorySlice";
 import materialReducer from "./slices/materialSlice";
 import vendorReducer from "./slices/vendorSlice";
 import userReducer from "./slices/userSlice";
+import driverReducer from "./slices/driverSlice";
 import bookingReducer from "./slices/bookingSlice";
 import transactionReducer from "./slices/transactionSlice";
 import staffReducer from "./slices/staffSlice";
@@ -18,6 +19,7 @@ export const store = configureStore({
     materials: materialReducer,
     vendors: vendorReducer,
     users: userReducer,
+    drivers: driverReducer,
     bookings: bookingReducer,
     transactions: transactionReducer,
     staff: staffReducer,

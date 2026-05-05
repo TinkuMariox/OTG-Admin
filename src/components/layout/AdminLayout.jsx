@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Bell,
   Store,
+  Truck,
 } from "lucide-react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -70,6 +71,7 @@ export default function AdminLayout({ children }) {
       items: [
         { icon: Users, label: "Users", path: "/users" },
         { icon: Store, label: "Vendors", path: "/vendors" },
+        { icon: Truck, label: "Drivers", path: "/drivers" },
       ],
     },
     {

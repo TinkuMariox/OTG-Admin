@@ -9,6 +9,7 @@ import ResetPassword from "../pages/auth/ResetPassword";
 import Dashboard from "../pages/Dashboard";
 import Users from "../pages/User";
 import Vendors from "../pages/Vendors";
+import Drivers from "../pages/Drivers";
 import VendorMaterials from "../pages/VendorMaterials";
 import Categories from "../pages/Categories";
 import SubCategories from "../pages/SubCategories";
@@ -61,6 +62,7 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/vendors" element={<Vendors />} />
+          <Route path="/drivers" element={<Drivers />} />
           <Route
             path="/vendors/:vendorId/materials"
             element={<VendorMaterials />}
